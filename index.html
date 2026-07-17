@@ -220,6 +220,31 @@
       background-color: var(--pdf-hover);
     }
 
+    /* Стиль зеленой кнопки сохранения */
+    .btn-save {
+      background-color: #16a34a;
+    }
+
+    .btn-save:hover {
+      background-color: #15803d;
+    }
+
+    /* Стиль поля ввода имени таблицы */
+    .table-name-input {
+      background-color: var(--input-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      outline: none;
+      width: 180px;
+    }
+
+    .table-name-input:focus {
+      border-color: var(--accent-color);
+    }
+
     .instruction {
       font-size: 0.8rem;
       color: var(--text-muted);
@@ -427,6 +452,14 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
         <span data-i18n="btn_export">Экспорт в PDF</span>
       </button>
+      
+      <!-- Новые элементы: инпут и зеленая кнопка сейв -->
+      <input type="text" id="table-name-input" class="table-name-input" placeholder="Имя таблицы..." data-i18n-placeholder="placeholder_table_name">
+      <button class="btn btn-save" id="save-table-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+        <span data-i18n="btn_save">Save</span>
+      </button>
+
       <div class="instruction" data-i18n="instruction_text">
         💡 Зажми шапку для перетаскивания. Нажми «Связать» на одном, затем кликни по другому для линии.
       </div>
@@ -446,13 +479,15 @@
         welcome_title: "Конструктор Интерактивных Досье",
         welcome_sub: "Создавайте структурированные информационные блоки, связывайте их логическими путями, добавляйте медиафайлы и экспортируйте результаты.",
         action_create_title: "Создать досье",
-        action_create_desc: "Открыть рабочую область и начать конструировать новые блоки.",
+        action_create_desc: "Открыть рабочую область и начать конструировать новые blocks.",
         action_view_title: "Просмотреть таблицы",
         action_view_desc: "Перейти к просмотру созданных блоков и нижним записям на холсте.",
         btn_back: "Меню",
         app_title: "Интерактивное пространство",
         btn_add_block: "Добавить блок",
         btn_export: "Экспорт в PDF",
+        btn_save: "Сохранить",
+        placeholder_table_name: "Имя таблицы...",
         instruction_text: "💡 Зажми шапку для перетаскивания. Нажми «Связать» на одном, затем кликни по другому для линии.",
         block_prefix: "Блок",
         placeholder_text: "Текст...",
@@ -462,7 +497,8 @@
         pdf_title: "Отчет по интерактивной карте",
         pdf_no_text: "(Текст отсутствует)",
         pdf_attached: "📎 Прикрепленный файл: ",
-        alert_empty: "Добавьте хотя бы один блок для экспорта!"
+        alert_empty: "Добавьте хотя бы один блок для экспорта!",
+        alert_save_success: "Таблица успешно сохранена под именем: "
       },
       en: {
         welcome_title: "Interactive Dossier Builder",
@@ -475,6 +511,8 @@
         app_title: "Interactive Workspace",
         btn_add_block: "Add Block",
         btn_export: "Export to PDF",
+        btn_save: "Save",
+        placeholder_table_name: "Table name...",
         instruction_text: "💡 Drag headers to move. Click 'Link' on one block, then click another block to connect them.",
         block_prefix: "Block",
         placeholder_text: "Type info here...",
@@ -484,7 +522,8 @@
         pdf_title: "Interactive Map Report",
         pdf_no_text: "(No content text available)",
         pdf_attached: "📎 Attached file: ",
-        alert_empty: "Please add at least one data block to export!"
+        alert_empty: "Please add at least one data block to export!",
+        alert_save_success: "Table successfully saved with name: "
       }
     };
 
@@ -503,6 +542,10 @@
     const langToggleBtn = document.getElementById('lang-toggle-btn');
     const backToMenuBtn = document.getElementById('back-to-menu-btn');
     
+    // Элементы сохранения таблицы
+    const tableNameInput = document.getElementById('table-name-input');
+    const saveTableBtn = document.getElementById('save-table-btn');
+    
     let nodes = [];
     let connections = []; 
     let nodeIdCounter = 0;
@@ -518,6 +561,14 @@
           el.innerText = i18n[currentLang][key];
         }
       });
+      
+      // Перевод плейсхолдера для имени таблицы
+      if (tableNameInput) {
+        const attrKey = tableNameInput.getAttribute('data-i18n-placeholder');
+        if (i18n[currentLang][attrKey]) {
+          tableNameInput.placeholder = i18n[currentLang][attrKey];
+        }
+      }
       
       // Update toggle button text
       langToggleBtn.querySelector('span').innerText = currentLang === 'ru' ? 'EN' : 'RU';
@@ -855,6 +906,13 @@
       };
 
       html2pdf().set(opt).from(pdfContainer).save();
+    });
+
+    // --- Логика сохранения по кнопке Save ---
+    saveTableBtn.addEventListener('click', () => {
+      const name = tableNameInput.value.trim() || "Untitled Table";
+      alert(i18n[currentLang].alert_save_success + name);
+      // Сюда можно дописать сохранение в localStorage, базу или отправку на бэкенд
     });
   </script>
 </body>
