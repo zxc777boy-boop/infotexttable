@@ -3,253 +3,859 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Система таблиц</title>
+  <title>Dossier Creator & Board</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
-    /* Основные стили страницы */
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f4f7f6;
+    :root {
+      /* Dark Theme (Default) */
+      --bg-color: #0f172a;
+      --board-bg: #1e293b;
+      --node-bg: #334155;
+      --text-color: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent-color: #3b82f6;
+      --accent-hover: #2563eb;
+      --danger-color: #ef4444;
+      --pdf-color: #10b981;
+      --pdf-hover: #059669;
+      --border-color: #475569;
+      --input-bg: #1e293b;
+      --card-shadow: rgba(0, 0, 0, 0.3);
+      --dot-color: #334155;
+    }
+
+    [data-theme="light"] {
+      /* Light Theme */
+      --bg-color: #f8fafc;
+      --board-bg: #ffffff;
+      --node-bg: #f1f5f9;
+      --text-color: #0f172a;
+      --text-muted: #64748b;
+      --accent-color: #2563eb;
+      --accent-hover: #1d4ed8;
+      --danger-color: #dc2626;
+      --pdf-color: #16a34a;
+      --pdf-hover: #15803d;
+      --border-color: #cbd5e1;
+      --input-bg: #ffffff;
+      --card-shadow: rgba(0, 0, 0, 0.1);
+      --dot-color: #cbd5e1;
+    }
+
+    * {
+      box-sizing: border-box;
       margin: 0;
       padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Top-right Controls (Persistent globally) */
+    .global-controls {
+      position: fixed;
+      top: 15px;
+      right: 20px;
+      display: flex;
+      gap: 10px;
+      z-index: 100;
+    }
+
+    .ctrl-btn {
+      background-color: var(--board-bg);
+      color: var(--text-color);
+      border: 1px solid var(--border-color);
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 2px 4px var(--card-shadow);
+    }
+
+    .ctrl-btn:hover {
+      background-color: var(--node-bg);
+    }
+
+    /* Landing Screen */
+    #landing-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      height: 100vh;
+      background-color: var(--bg-color);
+      z-index: 50;
+      padding: 20px;
+      text-align: center;
     }
 
-    /* Стили для кнопок управления на главной */
-    .button-container {
+    #landing-screen.hidden {
+      display: none;
+    }
+
+    .landing-title {
+      font-size: 2.5rem;
+      margin-bottom: 15px;
+      font-weight: 700;
+      background: linear-gradient(to right, var(--accent-color), var(--pdf-color));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .landing-subtitle {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      margin-bottom: 40px;
+      max-width: 600px;
+    }
+
+    .main-actions {
       display: flex;
-      gap: 15px;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
     }
 
-    .btn-primary {
-      background-color: #28a745;
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      font-size: 16px;
-      border-radius: 6px;
+    .action-card {
+      background-color: var(--board-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 30px;
+      width: 260px;
       cursor: pointer;
-      font-weight: 500;
-      transition: background 0.2s;
-    }
-    .btn-primary:hover { background-color: #218838; }
-
-    /* Вторая кнопка, которая теперь открывает модальное окно */
-    .btn-secondary {
-      background-color: #6c757d;
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      font-size: 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 500;
-      transition: background 0.2s;
-    }
-    .btn-secondary:hover { background-color: #5a6268; }
-
-
-    /* --- МОДАЛЬНОЕ ОКНО (ПОП-АП) --- */
-    
-    /* Задний полупрозрачный фон */
-    .modal {
-      display: none; /* Изначально скрыто */
-      position: fixed;
-      z-index: 1000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.4);
-      backdrop-filter: blur(3px);
+      box-shadow: 0 10px 15px -3px var(--card-shadow);
+      transition: transform 0.2s, box-shadow 0.2s;
     }
 
-    /* Центрированное белое окошко */
-    .modal-content {
-      background-color: #ffffff;
-      margin: 12% auto;
-      padding: 24px;
-      border-radius: 10px;
-      width: 90%;
-      max-width: 460px;
-      box-shadow: 0 5px 25px rgba(0, 0, 0, 0.2);
-      box-sizing: border-box;
-      display: flex;
-      flex-direction: column;
+    .action-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 25px -5px var(--card-shadow);
+      border-color: var(--accent-color);
     }
 
-    /* Шапка окна */
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 2px solid #f1f3f5;
-      padding-bottom: 12px;
+    .action-icon {
+      font-size: 2.5rem;
       margin-bottom: 15px;
     }
 
-    .modal-header h2 {
-      margin: 0;
-      font-size: 20px;
-      color: #212529;
+    .action-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 10px;
     }
 
-    /* Кнопка закрытия (крестик) */
-    .close-button {
+    .action-desc {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    /* App Workspace Layout */
+    #app-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100%;
+    }
+
+    #app-container.hidden {
+      display: none;
+    }
+
+    header {
+      background-color: var(--board-bg);
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--border-color);
+      z-index: 10;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      flex-shrink: 0;
+    }
+
+    h1 {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .btn {
+      background-color: var(--accent-color);
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 6px;
       cursor: pointer;
-      font-size: 28px;
-      color: #adb5bd;
-      line-height: 1;
-      transition: color 0.15s;
-    }
-    .close-button:hover { color: #495057; }
-
-    /* Ограниченная область с прокруткой для таблиц */
-    .tables-list {
-      max-height: 280px; /* Высота, при превышении которой включится скролл */
-      overflow-y: auto;  /* Вертикальный скролл */
-      padding-right: 6px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
-    /* Стилизация полосы прокрутки (скроллбара) */
-    .tables-list::-webkit-scrollbar {
-      width: 6px;
-    }
-    .tables-list::-webkit-scrollbar-track {
-      background: #f1f3f5;
-      border-radius: 4px;
-    }
-    .tables-list::-webkit-scrollbar-thumb {
-      background: #dee2e6;
-      border-radius: 4px;
-    }
-    .tables-list::-webkit-scrollbar-thumb:hover {
-      background: #ced4da;
+    .btn:hover {
+      background-color: var(--accent-hover);
     }
 
-    /* Строка таблицы в списке */
-    .table-item {
+    .btn-pdf {
+      background-color: var(--pdf-color);
+    }
+
+    .btn-pdf:hover {
+      background-color: var(--pdf-hover);
+    }
+
+    .instruction {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-left: auto;
+      margin-right: 180px; /* Leave space for language/theme controls */
+    }
+
+    /* Workspace canvas styling */
+    #workspace-container {
+      flex: 1;
+      overflow: auto;
+      position: relative;
+    }
+
+    #workspace {
+      width: 4000px;
+      height: 4000px;
+      position: relative;
+      background-color: var(--bg-color);
+      background-image: radial-gradient(var(--dot-color) 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+
+    #svg-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Nodes styling */
+    .node {
+      position: absolute;
+      width: 220px;
+      background-color: var(--node-bg);
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
+      padding: 10px;
+      box-shadow: 0 8px 12px -3px var(--card-shadow);
+      cursor: grab;
+      z-index: 2;
+      user-select: none;
+    }
+
+    .node:active {
+      cursor: grabbing;
+    }
+
+    .node.connecting-source {
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.4);
+    }
+
+    .node-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 12px 8px;
-      border-bottom: 1px solid #f1f3f5;
-      transition: background-color 0.2s;
-    }
-    .table-item:hover {
-      background-color: #f8f9fa;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border-color);
     }
 
-    .table-name {
-      font-size: 16px;
-      font-weight: 500;
-      color: #343a40;
+    .node-title {
+      font-size: 0.8rem;
+      font-weight: bold;
     }
 
-    /* Синяя кнопка «Просмотреть» справа */
-    .btn-view {
-      background-color: #007bff;
+    .delete-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1rem;
+      line-height: 1;
+    }
+
+    .delete-btn:hover {
+      color: var(--danger-color);
+    }
+
+    .node-textarea {
+      width: 100%;
+      min-height: 55px;
+      background-color: var(--input-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      color: var(--text-color);
+      padding: 6px;
+      resize: vertical;
+      font-size: 0.8rem;
+      outline: none;
+      margin-bottom: 8px;
+    }
+
+    .node-textarea:focus {
+      border-color: var(--accent-color);
+    }
+
+    .file-upload-wrapper {
+      position: relative;
+      margin-bottom: 8px;
+    }
+
+    .file-input {
+      display: none;
+    }
+
+    .file-label {
+      display: block;
+      background-color: var(--border-color);
+      color: var(--text-color);
+      text-align: center;
+      padding: 5px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+
+    .file-preview {
+      margin-top: 6px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      max-height: 80px;
+      overflow: hidden;
+      border-radius: 4px;
+    }
+
+    .file-preview img {
+      width: 100%;
+      height: auto;
+      object-fit: cover;
+      border-radius: 4px;
+      display: block;
+    }
+
+    .node-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .node-btn {
+      flex: 1;
+      background: var(--input-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+      padding: 4px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      cursor: pointer;
+    }
+
+    .node-btn:hover {
+      background-color: var(--accent-color);
+      border-color: var(--accent-color);
       color: white;
-      padding: 7px 16px;
-      text-decoration: none;
-      border-radius: 5px;
-      font-size: 14px;
-      font-weight: 500;
-      transition: background-color 0.15s, transform 0.1s;
-    }
-    .btn-view:hover {
-      background-color: #0056b3;
-    }
-    .btn-view:active {
-      transform: scale(0.97);
     }
   </style>
 </head>
 <body>
 
-  <!-- Блок с главными кнопками на странице -->
-  <div class="button-container">
-    <button class="btn-primary">Создать новую таблицу</button>
-    <!-- Измененная вторая кнопка -->
-    <button id="openModalBtn" class="btn-secondary">Просмотреть таблицы</button>
+  <!-- Global Toolbar for Language & Theme Switching -->
+  <div class="global-controls">
+    <button class="ctrl-btn" id="lang-toggle-btn" title="Switch Language">
+      🌐 <span>EN</span>
+    </button>
+    <button class="ctrl-btn" id="theme-toggle-btn" title="Toggle Theme">
+      🌙 <span>Dark</span>
+    </button>
   </div>
 
-  <!-- Модальное окно (всплывающий список созданных таблиц) -->
-  <div id="tablesModal" class="modal">
-    <div class="modal-content">
-      
-      <div class="modal-header">
-        <h2>Созданные таблицы</h2>
-        <span class="close-button">&times;</span>
+  <!-- Landing Screen -->
+  <div id="landing-screen">
+    <h1 class="landing-title" data-i18n="welcome_title">Конструктор Интерактивных Досье</h1>
+    <p class="landing-subtitle" data-i18n="welcome_sub">Создавайте структурированные информационные блоки, связывайте их логическими путями, добавляйте медиафайлы и экспортируйте результаты.</p>
+    
+    <div class="main-actions">
+      <div class="action-card" id="go-create-btn">
+        <div class="action-icon">➕</div>
+        <div class="action-title" data-i18n="action_create_title">Создать досье</div>
+        <div class="action-desc" data-i18n="action_create_desc">Открыть рабочую область и начать конструировать новые блоки.</div>
       </div>
-      
-      <!-- Список таблиц со скроллом -->
-      <div class="tables-list">
-        
-        <!-- Вместо href="/tables/..." впишите реальные ссылки переходов на страницы таблиц -->
-        <div class="table-item">
-          <span class="table-name">Таблица 1</span>
-          <a href="/tables/1" class="btn-view">Просмотреть</a>
-        </div>
-        
-        <div class="table-item">
-          <span class="table-name">Таблица 2</span>
-          <a href="/tables/2" class="btn-view">Просмотреть</a>
-        </div>
-        
-        <div class="table-item">
-          <span class="table-name">Таблица 3</span>
-          <a href="/tables/3" class="btn-view">Просмотреть</a>
-        </div>
-
-        <div class="table-item">
-          <span class="table-name">Таблица 4</span>
-          <a href="/tables/4" class="btn-view">Просмотреть</a>
-        </div>
-
-        <div class="table-item">
-          <span class="table-name">Таблица 5</span>
-          <a href="/tables/5" class="btn-view">Просмотреть</a>
-        </div>
-
-        <div class="table-item">
-          <span class="table-name">Таблица 6</span>
-          <a href="/tables/6" class="btn-view">Просмотреть</a>
-        </div>
-        
+      <div class="action-card" id="go-view-btn">
+        <div class="action-icon">📋</div>
+        <div class="action-title" data-i18n="action_view_title">Просмотреть таблицы</div>
+        <div class="action-desc" data-i18n="action_view_desc">Перейти к просмотру созданных блоков и нижним записям на холсте.</div>
       </div>
     </div>
   </div>
 
-  <!-- Логика работы модального окна -->
+  <!-- Main Workspace Application -->
+  <div id="app-container" class="hidden">
+    <header>
+      <button class="btn" id="back-to-menu-btn" style="background-color: var(--border-color); color: var(--text-color);">
+        ⬅ <span data-i18n="btn_back">Меню</span>
+      </button>
+      <h1 data-i18n="app_title">Интерактивное пространство</h1>
+      <button class="btn" id="add-node-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        <span data-i18n="btn_add_block">Добавить блок</span>
+      </button>
+      <button class="btn btn-pdf" id="export-pdf-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        <span data-i18n="btn_export">Экспорт в PDF</span>
+      </button>
+      <div class="instruction" data-i18n="instruction_text">
+        💡 Зажми шапку для перетаскивания. Нажми «Связать» на одном, затем кликни по другому для линии.
+      </div>
+    </header>
+
+    <div id="workspace-container">
+      <div id="workspace">
+        <svg id="svg-canvas"></svg>
+      </div>
+    </div>
+  </div>
+
   <script>
-    const modal = document.getElementById("tablesModal");
-    const openBtn = document.getElementById("openModalBtn");
-    const closeBtn = document.querySelector(".close-button");
-
-    // 1. Открытие модального окна
-    openBtn.onclick = function() {
-      modal.style.display = "block";
-      document.body.style.overflow = "hidden"; // Запрещаем прокрутку фона
-    }
-
-    // 2. Закрытие при клике на крестик
-    closeBtn.onclick = function() {
-      modal.style.display = "none";
-      document.body.style.overflow = "auto";  // Возвращаем прокрутку фона
-    }
-
-    // 3. Закрытие при клике в пустую область вне окна
-    window.onclick = function(event) {
-      if (event.target == modal) {
-        modal.style.display = "none";
-        document.body.style.overflow = "auto";
+    // --- Internationalization Dictionary ---
+    const i18n = {
+      ru: {
+        welcome_title: "Конструктор Интерактивных Досье",
+        welcome_sub: "Создавайте структурированные информационные блоки, связывайте их логическими путями, добавляйте медиафайлы и экспортируйте результаты.",
+        action_create_title: "Создать досье",
+        action_create_desc: "Открыть рабочую область и начать конструировать новые блоки.",
+        action_view_title: "Просмотреть таблицы",
+        action_view_desc: "Перейти к просмотру созданных блоков и нижним записям на холсте.",
+        btn_back: "Меню",
+        app_title: "Интерактивное пространство",
+        btn_add_block: "Добавить блок",
+        btn_export: "Экспорт в PDF",
+        instruction_text: "💡 Зажми шапку для перетаскивания. Нажми «Связать» на одном, затем кликни по другому для линии.",
+        block_prefix: "Блок",
+        placeholder_text: "Текст...",
+        btn_file: "📁 Файл",
+        btn_link: "🔗 Связать",
+        file_uploaded: "Файл загружен",
+        pdf_title: "Отчет по интерактивной карте",
+        pdf_no_text: "(Текст отсутствует)",
+        pdf_attached: "📎 Прикрепленный файл: ",
+        alert_empty: "Добавьте хотя бы один блок для экспорта!"
+      },
+      en: {
+        welcome_title: "Interactive Dossier Builder",
+        welcome_sub: "Create structured information blocks, link them via logical paths, upload local media files, and export data seamlessly.",
+        action_create_title: "Create Dossier",
+        action_create_desc: "Open the interactive workspace workspace to build and manage components.",
+        action_view_title: "View Tables",
+        action_view_desc: "Instantly scroll down to inspect created data cards and layouts on the sheet.",
+        btn_back: "Menu",
+        app_title: "Interactive Workspace",
+        btn_add_block: "Add Block",
+        btn_export: "Export to PDF",
+        instruction_text: "💡 Drag headers to move. Click 'Link' on one block, then click another block to connect them.",
+        block_prefix: "Block",
+        placeholder_text: "Type info here...",
+        btn_file: "📁 Upload File",
+        btn_link: "🔗 Link",
+        file_uploaded: "File attached",
+        pdf_title: "Interactive Map Report",
+        pdf_no_text: "(No content text available)",
+        pdf_attached: "📎 Attached file: ",
+        alert_empty: "Please add at least one data block to export!"
       }
-    }
-  </script>
+    };
 
+    let currentLang = 'ru';
+
+    // --- State Variables ---
+    const landingScreen = document.getElementById('landing-screen');
+    const appContainer = document.getElementById('app-container');
+    const container = document.getElementById('workspace-container');
+    const workspace = document.getElementById('workspace');
+    const svgCanvas = document.getElementById('svg-canvas');
+    
+    const addNodeBtn = document.getElementById('add-node-btn');
+    const exportPdfBtn = document.getElementById('export-pdf-btn');
+    const themeToggleBtn = document.getElementById('theme-toggle-btn');
+    const langToggleBtn = document.getElementById('lang-toggle-btn');
+    const backToMenuBtn = document.getElementById('back-to-menu-btn');
+    
+    let nodes = [];
+    let connections = []; 
+    let nodeIdCounter = 0;
+    
+    let isConnectingMode = false;
+    let sourceNodeId = null;
+
+    // --- Language Translation Engine ---
+    function updateLanguageUI() {
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (i18n[currentLang][key]) {
+          el.innerText = i18n[currentLang][key];
+        }
+      });
+      
+      // Update toggle button text
+      langToggleBtn.querySelector('span').innerText = currentLang === 'ru' ? 'EN' : 'RU';
+      
+      // Re-translate current items inside nodes dynamically
+      nodes.forEach(node => {
+        const ta = node.querySelector('.node-textarea');
+        if (ta && !ta.value) {
+          ta.placeholder = i18n[currentLang].placeholder_text;
+        }
+        const linkBtn = node.querySelector('.link-btn');
+        if (linkBtn) linkBtn.innerText = i18n[currentLang].btn_link;
+        
+        // Label naming preserving existing state if unchanged
+        const lbl = node.querySelector('.file-label');
+        if (lbl && lbl.innerText.startsWith('📁') || lbl.innerText.includes('Upload')) {
+          lbl.innerText = i18n[currentLang].btn_file;
+        }
+      });
+    }
+
+    langToggleBtn.addEventListener('click', () => {
+      currentLang = currentLang === 'ru' ? 'en' : 'ru';
+      updateLanguageUI();
+    });
+
+    // --- Theme Toggle Engine ---
+    themeToggleBtn.addEventListener('click', () => {
+      const isLight = document.body.getAttribute('data-theme') === 'light';
+      if (isLight) {
+        document.body.removeAttribute('data-theme');
+        themeToggleBtn.querySelector('span').innerText = currentLang === 'ru' ? 'Темная' : 'Dark';
+        themeToggleBtn.innerHTML = '🌙 <span>' + (currentLang === 'ru' ? 'Темная' : 'Dark') + '</span>';
+      } else {
+        document.body.setAttribute('data-theme', 'light');
+        themeToggleBtn.innerHTML = '☀️ <span>' + (currentLang === 'ru' ? 'Светлая' : 'Light') + '</span>';
+      }
+      drawLines(); // Redraw lines to respect current color style variables properly
+    });
+
+    // --- Navigation Flow ---
+    document.getElementById('go-create-btn').addEventListener('click', () => {
+      landingScreen.classList.add('hidden');
+      appContainer.classList.remove('hidden');
+      if (nodes.length === 0) {
+        // Populate initial demo node items if empty
+        createNode(150, 150);
+        createNode(450, 200);
+      }
+      drawLines();
+    });
+
+    document.getElementById('go-view-btn').addEventListener('click', () => {
+      landingScreen.classList.add('hidden');
+      appContainer.classList.remove('hidden');
+      if (nodes.length === 0) {
+        createNode(150, 150);
+        createNode(450, 600); // Placed further down
+      }
+      drawLines();
+      
+      // Find the furthest bottom/right node and scroll towards it
+      setTimeout(() => {
+        let maxTop = 0;
+        nodes.forEach(n => {
+          const topVal = parseFloat(n.style.top);
+          if (topVal > maxTop) maxTop = topVal;
+        });
+        container.scrollTo({
+          top: Math.max(0, maxTop - 200),
+          behavior: 'smooth'
+        });
+      }, 100);
+    });
+
+    backToMenuBtn.addEventListener('click', () => {
+      appContainer.classList.add('hidden');
+      landingScreen.classList.remove('hidden');
+    });
+
+    // --- Dynamic Card Creation ---
+    addNodeBtn.addEventListener('click', () => {
+      const scrollLeft = container.scrollLeft;
+      const scrollTop = container.scrollTop;
+      const x = scrollLeft + Math.random() * (container.clientWidth - 260) + 50;
+      const y = scrollTop + Math.random() * (container.clientHeight - 220) + 50;
+      createNode(x, y);
+    });
+
+    function createNode(x, y) {
+      const id = 'node-' + nodeIdCounter++;
+      const nodeEl = document.createElement('div');
+      nodeEl.className = 'node';
+      nodeEl.id = id;
+      nodeEl.style.left = `${x}px`;
+      nodeEl.style.top = `${y}px`;
+
+      nodeEl.innerHTML = `
+        <div class="node-header">
+          <span class="node-title">${i18n[currentLang].block_prefix} #${nodeIdCounter}</span>
+          <button class="delete-btn" title="Remove block">&times;</button>
+        </div>
+        <textarea class="node-textarea" placeholder="${i18n[currentLang].placeholder_text}"></textarea>
+        
+        <div class="file-upload-wrapper">
+          <label class="file-label" for="file-${id}">${i18n[currentLang].btn_file}</label>
+          <input type="file" id="file-${id}" class="file-input">
+          <div class="file-preview"></div>
+        </div>
+
+        <div class="node-actions">
+          <button class="node-btn link-btn">${i18n[currentLang].btn_link}</button>
+        </div>
+      `;
+
+      workspace.appendChild(nodeEl);
+      nodes.push(nodeEl);
+
+      // --- Drag & Drop logic ---
+      let isDragging = false;
+      let startX, startY;
+      const header = nodeEl.querySelector('.node-header');
+      
+      header.addEventListener('mousedown', (e) => {
+        if (e.target.classList.contains('delete-btn')) return;
+        isDragging = true;
+        nodeEl.style.zIndex = Math.max(...nodes.map(n => parseInt(n.style.zIndex) || 2)) + 1;
+        startX = e.clientX - nodeEl.offsetLeft;
+        startY = e.clientY - nodeEl.offsetTop;
+        
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+      });
+
+      function onMouseMove(e) {
+        if (!isDragging) return;
+        let newX = e.clientX - startX;
+        let newY = e.clientY - startY;
+
+        newX = Math.max(0, Math.min(newX, workspace.offsetWidth - nodeEl.offsetWidth));
+        newY = Math.max(0, Math.min(newY, workspace.offsetHeight - nodeEl.offsetHeight));
+
+        nodeEl.style.left = `${newX}px`;
+        nodeEl.style.top = `${newY}px`;
+        drawLines();
+      }
+
+      function onMouseUp() {
+        isDragging = false;
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+      }
+
+      // --- File Attach Handling ---
+      const fileInput = nodeEl.querySelector('.file-input');
+      const filePreview = nodeEl.querySelector('.file-preview');
+      const fileLabel = nodeEl.querySelector('.file-label');
+
+      fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        fileLabel.innerText = `📎 ${file.name.slice(0, 12)}${file.name.length > 12 ? '...' : ''}`;
+        filePreview.innerHTML = ''; 
+
+        if (file.type.startsWith('image/')) {
+          const reader = new FileReader();
+          reader.onload = function(event) {
+            const img = document.createElement('img');
+            img.src = event.target.result;
+            filePreview.appendChild(img);
+          };
+          reader.readAsDataURL(file);
+        } else {
+          filePreview.innerHTML = `<p style="padding: 4px; background: var(--input-bg); border-radius:4px; font-size: 11px;">${i18n[currentLang].file_uploaded}</p>`;
+        }
+      });
+
+      // --- Connection Linking System ---
+      const linkBtn = nodeEl.querySelector('.link-btn');
+      linkBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!isConnectingMode) {
+          isConnectingMode = true;
+          sourceNodeId = id;
+          nodeEl.classList.add('connecting-source');
+        } else {
+          resetConnectingMode();
+        }
+      });
+
+      nodeEl.addEventListener('click', () => {
+        if (isConnectingMode && sourceNodeId !== id) {
+          const exists = connections.some(c => 
+            (c.from === sourceNodeId && c.to === id) || 
+            (c.from === id && c.to === sourceNodeId)
+          );
+
+          if (!exists) {
+            connections.push({ from: sourceNodeId, to: id });
+            drawLines();
+          }
+          resetConnectingMode();
+        }
+      });
+
+      // --- Node Removal ---
+      const deleteBtn = nodeEl.querySelector('.delete-btn');
+      deleteBtn.addEventListener('click', () => {
+        connections = connections.filter(c => c.from !== id && c.to !== id);
+        nodeEl.remove();
+        nodes = nodes.filter(n => n.id !== id);
+        drawLines();
+      });
+    }
+
+    function resetConnectingMode() {
+      isConnectingMode = false;
+      if (sourceNodeId) {
+        document.getElementById(sourceNodeId)?.classList.remove('connecting-source');
+      }
+      sourceNodeId = null;
+    }
+
+    // --- Draw Interactive Connecting Vector Lines ---
+    function drawLines() {
+      svgCanvas.innerHTML = '';
+      const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim() || '#3b82f6';
+
+      connections.forEach(conn => {
+        const fromNode = document.getElementById(conn.from);
+        const toNode = document.getElementById(conn.to);
+
+        if (fromNode && toNode) {
+          const fromX = fromNode.offsetLeft + (fromNode.offsetWidth / 2);
+          const fromY = fromNode.offsetTop + (fromNode.offsetHeight / 2);
+          const toX = toNode.offsetLeft + (toNode.offsetWidth / 2);
+          const toY = toNode.offsetTop + (toNode.offsetHeight / 2);
+
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('x1', fromX);
+          line.setAttribute('y1', fromY);
+          line.setAttribute('x2', toX);
+          line.setAttribute('y2', toY);
+          line.setAttribute('stroke', accentColor);
+          line.setAttribute('stroke-width', '2.5');
+          line.setAttribute('stroke-dasharray', '5,5');
+          svgCanvas.appendChild(line);
+        }
+      });
+    }
+
+    workspace.addEventListener('click', (e) => {
+      if (e.target === workspace) {
+        resetConnectingMode();
+      }
+    });
+
+    window.addEventListener('resize', drawLines);
+
+    // --- PDF Compiling and Export Engine ---
+    exportPdfBtn.addEventListener('click', () => {
+      if (nodes.length === 0) {
+        alert(i18n[currentLang].alert_empty);
+        return;
+      }
+
+      const pdfContainer = document.createElement('div');
+      pdfContainer.style.padding = '30px';
+      pdfContainer.style.color = '#1e293b';
+      pdfContainer.style.backgroundColor = '#ffffff';
+
+      const title = document.createElement('h1');
+      title.innerText = i18n[currentLang].pdf_title;
+      title.style.borderBottom = '3px solid #3b82f6';
+      title.style.paddingBottom = '12px';
+      title.style.marginBottom = '25px';
+      title.style.fontSize = '22px';
+      pdfContainer.appendChild(title);
+
+      nodes.forEach((nodeEl) => {
+        const blockDiv = document.createElement('div');
+        blockDiv.style.marginBottom = '20px';
+        blockDiv.style.padding = '15px';
+        blockDiv.style.border = '1px solid #cbd5e1';
+        blockDiv.style.borderRadius = '8px';
+        blockDiv.style.borderLeft = '5px solid #3b82f6';
+        blockDiv.style.backgroundColor = '#f8fafc';
+        blockDiv.style.pageBreakInside = 'avoid';
+
+        const blockTitleText = nodeEl.querySelector('.node-title').innerText;
+        const blockTitle = document.createElement('h2');
+        blockTitle.innerText = blockTitleText;
+        blockTitle.style.fontSize = '15px';
+        blockTitle.style.marginBottom = '8px';
+        blockDiv.appendChild(blockTitle);
+
+        const textareaValue = nodeEl.querySelector('.node-textarea').value;
+        const textParagraph = document.createElement('p');
+        textParagraph.innerText = textareaValue || i18n[currentLang].pdf_no_text;
+        textParagraph.style.fontSize = '13px';
+        textParagraph.style.whiteSpace = 'pre-wrap';
+        blockDiv.appendChild(textParagraph);
+
+        const imgPreview = nodeEl.querySelector('.file-preview img');
+        const fileInput = nodeEl.querySelector('.file-input');
+
+        if (imgPreview) {
+          const imgClone = document.createElement('img');
+          imgClone.src = imgPreview.src;
+          imgClone.style.maxWidth = '100%';
+          imgClone.style.maxHeight = '230px';
+          imgClone.style.borderRadius = '6px';
+          imgClone.style.display = 'block';
+          imgClone.style.marginTop = '10px';
+          blockDiv.appendChild(imgClone);
+        } else if (fileInput && fileInput.files.length > 0) {
+          const fileInfo = document.createElement('div');
+          fileInfo.innerText = `${i18n[currentLang].pdf_attached}${fileInput.files[0].name}`;
+          fileInfo.style.fontSize = '11px';
+          fileInfo.style.color = '#64748b';
+          fileInfo.style.marginTop = '8px';
+          blockDiv.appendChild(fileInfo);
+        }
+
+        pdfContainer.appendChild(blockDiv);
+      });
+
+      const opt = {
+        margin:       12,
+        filename:     'dossier_export.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      html2pdf().set(opt).from(pdfContainer).save();
+    });
+  </script>
 </body>
 </html>
