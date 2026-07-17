@@ -404,6 +404,110 @@
       border-color: var(--accent-color);
       color: white;
     }
+
+    /* --- СТИЛИ ДЛЯ МОДАЛЬНОГО ОКНА ПРОСМОТРА ТАБЛИЦ --- */
+    .modal {
+      display: none; 
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(3px);
+    }
+
+    .modal-content {
+      background-color: var(--board-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+      margin: 10% auto;
+      padding: 24px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 10px 25px var(--card-shadow);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 12px;
+      margin-bottom: 15px;
+    }
+
+    .modal-header h2 {
+      margin: 0;
+      font-size: 1.3rem;
+    }
+
+    .close-button {
+      cursor: pointer;
+      font-size: 28px;
+      color: var(--text-muted);
+      line-height: 1;
+    }
+    .close-button:hover { color: var(--danger-color); }
+
+    .tables-list {
+      max-height: 300px;
+      overflow-y: auto;
+      padding-right: 5px;
+    }
+
+    /* Кастомный скроллбар модалки */
+    .tables-list::-webkit-scrollbar { width: 6px; }
+    .tables-list::-webkit-scrollbar-track { background: transparent; }
+    .tables-list::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+
+    .table-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 6px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .table-item:hover { background-color: rgba(255,255,255,0.02); }
+
+    .table-item-name {
+      font-size: 0.95rem;
+      font-weight: 500;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 220px;
+    }
+
+    .table-item-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-modal-action {
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: white;
+    }
+    .btn-modal-view { background-color: var(--accent-color); }
+    .btn-modal-view:hover { background-color: var(--accent-hover); }
+    .btn-modal-download { background-color: var(--pdf-color); }
+    .btn-modal-download:hover { background-color: var(--pdf-hover); }
+    
+    .empty-message {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 20px 0;
+      font-size: 0.9rem;
+    }
   </style>
 </head>
 <body>
@@ -453,7 +557,7 @@
         <span data-i18n="btn_export">Экспорт в PDF</span>
       </button>
       
-      <!-- Новые элементы: инпут и зеленая кнопка сейв -->
+      <!-- Поле ввода имени таблицы и кнопка сейв -->
       <input type="text" id="table-name-input" class="table-name-input" placeholder="Имя таблицы..." data-i18n-placeholder="placeholder_table_name">
       <button class="btn btn-save" id="save-table-btn">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
@@ -472,6 +576,19 @@
     </div>
   </div>
 
+  <!-- ОКНО ПРОСМОТРА СОХРАНЕННЫХ ТАБЛИЦ -->
+  <div id="tables-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 data-i18n="modal_title">Сохраненные таблицы</h2>
+        <span class="close-button" id="close-modal-btn">&times;</span>
+      </div>
+      <div class="tables-list" id="modal-tables-list">
+        <!-- Сюда динамически загружаются элементы через JS -->
+      </div>
+    </div>
+  </div>
+
   <script>
     // --- Internationalization Dictionary ---
     const i18n = {
@@ -479,7 +596,7 @@
         welcome_title: "Конструктор Интерактивных Досье",
         welcome_sub: "Создавайте структурированные информационные блоки, связывайте их логическими путями, добавляйте медиафайлы и экспортируйте результаты.",
         action_create_title: "Создать досье",
-        action_create_desc: "Открыть рабочую область и начать конструировать новые blocks.",
+        action_create_desc: "Открыть рабочую область и начать конструировать новые блоки.",
         action_view_title: "Просмотреть таблицы",
         action_view_desc: "Перейти к просмотру созданных блоков и нижним записям на холсте.",
         btn_back: "Меню",
@@ -498,7 +615,11 @@
         pdf_no_text: "(Текст отсутствует)",
         pdf_attached: "📎 Прикрепленный файл: ",
         alert_empty: "Добавьте хотя бы один блок для экспорта!",
-        alert_save_success: "Таблица успешно сохранена под именем: "
+        alert_save_success: "Таблица успешно сохранена под именем: ",
+        modal_title: "Сохраненные таблицы",
+        btn_view_item: "Просмотреть",
+        btn_download_item: "Скачать",
+        empty_tables: "Нет сохраненных таблиц"
       },
       en: {
         welcome_title: "Interactive Dossier Builder",
@@ -523,7 +644,11 @@
         pdf_no_text: "(No content text available)",
         pdf_attached: "📎 Attached file: ",
         alert_empty: "Please add at least one data block to export!",
-        alert_save_success: "Table successfully saved with name: "
+        alert_save_success: "Table successfully saved with name: ",
+        modal_title: "Saved Tables",
+        btn_view_item: "View",
+        btn_download_item: "Download",
+        empty_tables: "No saved tables found"
       }
     };
 
@@ -545,6 +670,11 @@
     // Элементы сохранения таблицы
     const tableNameInput = document.getElementById('table-name-input');
     const saveTableBtn = document.getElementById('save-table-btn');
+
+    // Элементы нового окна просмотра таблиц
+    const tablesModal = document.getElementById('tables-modal');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    const modalTablesList = document.getElementById('modal-tables-list');
     
     let nodes = [];
     let connections = []; 
@@ -562,7 +692,6 @@
         }
       });
       
-      // Перевод плейсхолдера для имени таблицы
       if (tableNameInput) {
         const attrKey = tableNameInput.getAttribute('data-i18n-placeholder');
         if (i18n[currentLang][attrKey]) {
@@ -570,10 +699,8 @@
         }
       }
       
-      // Update toggle button text
       langToggleBtn.querySelector('span').innerText = currentLang === 'ru' ? 'EN' : 'RU';
       
-      // Re-translate current items inside nodes dynamically
       nodes.forEach(node => {
         const ta = node.querySelector('.node-textarea');
         if (ta && !ta.value) {
@@ -582,12 +709,15 @@
         const linkBtn = node.querySelector('.link-btn');
         if (linkBtn) linkBtn.innerText = i18n[currentLang].btn_link;
         
-        // Label naming preserving existing state if unchanged
         const lbl = node.querySelector('.file-label');
         if (lbl && lbl.innerText.startsWith('📁') || lbl.innerText.includes('Upload')) {
           lbl.innerText = i18n[currentLang].btn_file;
         }
       });
+
+      if (tablesModal.style.display === "block") {
+        renderTablesList();
+      }
     }
 
     langToggleBtn.addEventListener('click', () => {
@@ -600,13 +730,12 @@
       const isLight = document.body.getAttribute('data-theme') === 'light';
       if (isLight) {
         document.body.removeAttribute('data-theme');
-        themeToggleBtn.querySelector('span').innerText = currentLang === 'ru' ? 'Темная' : 'Dark';
         themeToggleBtn.innerHTML = '🌙 <span>' + (currentLang === 'ru' ? 'Темная' : 'Dark') + '</span>';
       } else {
         document.body.setAttribute('data-theme', 'light');
         themeToggleBtn.innerHTML = '☀️ <span>' + (currentLang === 'ru' ? 'Светлая' : 'Light') + '</span>';
       }
-      drawLines(); // Redraw lines to respect current color style variables properly
+      drawLines();
     });
 
     // --- Navigation Flow ---
@@ -614,34 +743,26 @@
       landingScreen.classList.add('hidden');
       appContainer.classList.remove('hidden');
       if (nodes.length === 0) {
-        // Populate initial demo node items if empty
         createNode(150, 150);
         createNode(450, 200);
       }
       drawLines();
     });
 
+    // Вторая кнопка теперь открывает наше созданное модальное окно таблиц!
     document.getElementById('go-view-btn').addEventListener('click', () => {
-      landingScreen.classList.add('hidden');
-      appContainer.classList.remove('hidden');
-      if (nodes.length === 0) {
-        createNode(150, 150);
-        createNode(450, 600); // Placed further down
+      tablesModal.style.display = "block";
+      renderTablesList();
+    });
+
+    closeModalBtn.addEventListener('click', () => {
+      tablesModal.style.display = "none";
+    });
+
+    window.addEventListener('click', (e) => {
+      if (e.target === tablesModal) {
+        tablesModal.style.display = "none";
       }
-      drawLines();
-      
-      // Find the furthest bottom/right node and scroll towards it
-      setTimeout(() => {
-        let maxTop = 0;
-        nodes.forEach(n => {
-          const topVal = parseFloat(n.style.top);
-          if (topVal > maxTop) maxTop = topVal;
-        });
-        container.scrollTo({
-          top: Math.max(0, maxTop - 200),
-          behavior: 'smooth'
-        });
-      }, 100);
     });
 
     backToMenuBtn.addEventListener('click', () => {
@@ -658,7 +779,7 @@
       createNode(x, y);
     });
 
-    function createNode(x, y) {
+    function createNode(x, y, textValue = "", customTitle = null) {
       const id = 'node-' + nodeIdCounter++;
       const nodeEl = document.createElement('div');
       nodeEl.className = 'node';
@@ -666,12 +787,14 @@
       nodeEl.style.left = `${x}px`;
       nodeEl.style.top = `${y}px`;
 
+      const titleText = customTitle || `${i18n[currentLang].block_prefix} #${nodeIdCounter}`;
+
       nodeEl.innerHTML = `
         <div class="node-header">
-          <span class="node-title">${i18n[currentLang].block_prefix} #${nodeIdCounter}</span>
+          <span class="node-title">${titleText}</span>
           <button class="delete-btn" title="Remove block">&times;</button>
         </div>
-        <textarea class="node-textarea" placeholder="${i18n[currentLang].placeholder_text}"></textarea>
+        <textarea class="node-textarea" placeholder="${i18n[currentLang].placeholder_text}">${textValue}</textarea>
         
         <div class="file-upload-wrapper">
           <label class="file-label" for="file-${id}">${i18n[currentLang].btn_file}</label>
@@ -829,9 +952,9 @@
 
     window.addEventListener('resize', drawLines);
 
-    // --- PDF Compiling and Export Engine ---
-    exportPdfBtn.addEventListener('click', () => {
-      if (nodes.length === 0) {
+    // --- Внутренний генератор PDF структуры ---
+    function generatePdfFromData(savedNodes) {
+      if (!savedNodes || savedNodes.length === 0) {
         alert(i18n[currentLang].alert_empty);
         return;
       }
@@ -849,7 +972,7 @@
       title.style.fontSize = '22px';
       pdfContainer.appendChild(title);
 
-      nodes.forEach((nodeEl) => {
+      savedNodes.forEach((node) => {
         const blockDiv = document.createElement('div');
         blockDiv.style.marginBottom = '20px';
         blockDiv.style.padding = '15px';
@@ -859,40 +982,17 @@
         blockDiv.style.backgroundColor = '#f8fafc';
         blockDiv.style.pageBreakInside = 'avoid';
 
-        const blockTitleText = nodeEl.querySelector('.node-title').innerText;
         const blockTitle = document.createElement('h2');
-        blockTitle.innerText = blockTitleText;
+        blockTitle.innerText = node.title;
         blockTitle.style.fontSize = '15px';
         blockTitle.style.marginBottom = '8px';
         blockDiv.appendChild(blockTitle);
 
-        const textareaValue = nodeEl.querySelector('.node-textarea').value;
         const textParagraph = document.createElement('p');
-        textParagraph.innerText = textareaValue || i18n[currentLang].pdf_no_text;
+        textParagraph.innerText = node.text || i18n[currentLang].pdf_no_text;
         textParagraph.style.fontSize = '13px';
         textParagraph.style.whiteSpace = 'pre-wrap';
         blockDiv.appendChild(textParagraph);
-
-        const imgPreview = nodeEl.querySelector('.file-preview img');
-        const fileInput = nodeEl.querySelector('.file-input');
-
-        if (imgPreview) {
-          const imgClone = document.createElement('img');
-          imgClone.src = imgPreview.src;
-          imgClone.style.maxWidth = '100%';
-          imgClone.style.maxHeight = '230px';
-          imgClone.style.borderRadius = '6px';
-          imgClone.style.display = 'block';
-          imgClone.style.marginTop = '10px';
-          blockDiv.appendChild(imgClone);
-        } else if (fileInput && fileInput.files.length > 0) {
-          const fileInfo = document.createElement('div');
-          fileInfo.innerText = `${i18n[currentLang].pdf_attached}${fileInput.files[0].name}`;
-          fileInfo.style.fontSize = '11px';
-          fileInfo.style.color = '#64748b';
-          fileInfo.style.marginTop = '8px';
-          blockDiv.appendChild(fileInfo);
-        }
 
         pdfContainer.appendChild(blockDiv);
       });
@@ -906,14 +1006,127 @@
       };
 
       html2pdf().set(opt).from(pdfContainer).save();
+    }
+
+    // Экспорт текущей открытой таблицы
+    exportPdfBtn.addEventListener('click', () => {
+      const currentNodesData = nodes.map(n => ({
+        title: n.querySelector('.node-title').innerText,
+        text: n.querySelector('.node-textarea').value
+      }));
+      generatePdfFromData(currentNodesData);
     });
 
-    // --- Логика сохранения по кнопке Save ---
+    // --- РЕАЛЬНОЕ СОХРАНЕНИЕ В LocalStorage ПО КНОПКЕ SAVE ---
     saveTableBtn.addEventListener('click', () => {
-      const name = tableNameInput.value.trim() || "Untitled Table";
+      const name = tableNameInput.value.trim() || "Таблица " + (getSavedTables().length + 1);
+      
+      const tableData = {
+        name: name,
+        timestamp: Date.now(),
+        nodes: nodes.map((n, index) => ({
+          id: n.id,
+          index: index,
+          title: n.querySelector('.node-title').innerText,
+          text: n.querySelector('.node-textarea').value,
+          x: parseFloat(n.style.left),
+          y: parseFloat(n.style.top)
+        })),
+        connections: connections
+      };
+
+      const savedTables = getSavedTables();
+      savedTables.push(tableData);
+      localStorage.setItem('dossier_tables', JSON.stringify(savedTables));
+
       alert(i18n[currentLang].alert_save_success + name);
-      // Сюда можно дописать сохранение в localStorage, базу или отправку на бэкенд
+      tableNameInput.value = '';
     });
+
+    function getSavedTables() {
+      const data = localStorage.getItem('dossier_tables');
+      return data ? JSON.parse(data) : [];
+    }
+
+    // --- РЕНДЕР СПИСКА ТАБЛИЦ В МОДАЛЬНОМ ОКНЕ ---
+    function renderTablesList() {
+      modalTablesList.innerHTML = '';
+      const tables = getSavedTables();
+
+      if (tables.length === 0) {
+        modalTablesList.innerHTML = `<div class="empty-message">${i18n[currentLang].empty_tables}</div>`;
+        return;
+      }
+
+      // Сортируем: свежие сверху
+      tables.sort((a,b) => b.timestamp - a.timestamp);
+
+      tables.forEach((table, idx) => {
+        const item = document.createElement('div');
+        item.className = 'table-item';
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'table-item-name';
+        nameSpan.innerText = table.name;
+        item.appendChild(nameSpan);
+
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'table-item-actions';
+
+        // Синяя кнопка "Просмотреть"
+        const viewBtn = document.createElement('button');
+        viewBtn.className = 'btn-modal-action btn-modal-view';
+        viewBtn.innerText = i18n[currentLang].btn_view_item;
+        viewBtn.addEventListener('click', () => {
+          loadTableToWorkspace(table);
+          tablesModal.style.display = "none";
+          landingScreen.classList.add('hidden');
+          appContainer.classList.remove('hidden');
+        });
+
+        // Зеленая кнопка "Скачать"
+        const downloadBtn = document.createElement('button');
+        downloadBtn.className = 'btn-modal-action btn-modal-download';
+        downloadBtn.innerText = i18n[currentLang].btn_download_item;
+        downloadBtn.addEventListener('click', () => {
+          generatePdfFromData(table.nodes);
+        });
+
+        actionsDiv.appendChild(viewBtn);
+        actionsDiv.appendChild(downloadBtn);
+        item.appendChild(actionsDiv);
+        modalTablesList.appendChild(item);
+      });
+    }
+
+    // Загрузка выбранной таблицы на интерактивный холст
+    function loadTableToWorkspace(table) {
+      // Очищаем старый холст
+      workspace.querySelectorAll('.node').forEach(n => n.remove());
+      nodes = [];
+      connections = [];
+      nodeIdCounter = 0;
+
+      // Восстанавливаем блоки
+      const idMapping = {}; // Маппинг старых ID на новые сгенерированные
+      table.nodes.forEach(savedNode => {
+        const oldId = savedNode.id;
+        createNode(savedNode.x, savedNode.y, savedNode.text, savedNode.title);
+        const newlyCreatedNode = nodes[nodes.length - 1];
+        idMapping[oldId] = newlyCreatedNode.id;
+      });
+
+      // Восстанавливаем связи линий
+      table.connections.forEach(conn => {
+        const newFrom = idMapping[conn.from];
+        const newTo = idMapping[conn.to];
+        if (newFrom && newTo) {
+          connections.push({ from: newFrom, to: newTo });
+        }
+      });
+
+      drawLines();
+    }
   </script>
 </body>
 </html>
