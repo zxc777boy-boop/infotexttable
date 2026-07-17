@@ -548,6 +548,149 @@
       padding: 20px 0;
       font-size: 0.9rem;
     }
+
+    /* --- КНОПКА И ПАНЕЛЬ AI АССИСТЕНТА --- */
+    .ai-fab-btn {
+      position: fixed;
+      bottom: 25px;
+      right: 25px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #6366f1, #a855f7);
+      color: white;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
+      z-index: 200;
+      font-weight: 700;
+      font-size: 1.1rem;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .ai-fab-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(168, 85, 247, 0.6);
+    }
+
+    .ai-sidebar {
+      position: fixed;
+      top: 0;
+      right: -350px;
+      width: 350px;
+      height: 100%;
+      background-color: var(--board-bg);
+      border-left: 1px solid var(--border-color);
+      box-shadow: -5px 0 25px rgba(0, 0, 0, 0.25);
+      z-index: 190;
+      display: flex;
+      flex-direction: column;
+      transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .ai-sidebar.open {
+      right: 0;
+    }
+
+    .ai-sidebar-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .ai-sidebar-header h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      background: linear-gradient(to right, #818cf8, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .ai-chat-history {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .ai-msg {
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      max-width: 85%;
+      line-height: 1.4;
+    }
+
+    .ai-msg.user {
+      background-color: var(--accent-color);
+      color: white;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+
+    .ai-msg.assistant {
+      background-color: var(--node-bg);
+      color: var(--text-color);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+
+    .ai-chat-input-area {
+      padding: 16px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      gap: 8px;
+    }
+
+    .ai-input {
+      flex: 1;
+      background-color: var(--input-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-color);
+      padding: 10px 12px;
+      font-size: 0.85rem;
+      outline: none;
+      resize: none;
+      height: 40px;
+    }
+
+    .ai-input:focus {
+      border-color: #a855f7;
+    }
+
+    .ai-send-btn {
+      background-color: #a855f7;
+      color: white;
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .ai-send-btn:hover {
+      background-color: #9333ea;
+    }
+
+    /* Адаптация шторки под маленькие экраны телефонов */
+    @media (max-width: 480px) {
+      .ai-sidebar {
+        width: 100%;
+        right: -100%;
+      }
+    }
   </style>
 </head>
 <body>
@@ -565,7 +708,7 @@
   <!-- Landing Screen -->
   <div id="landing-screen">
     <h1 class="landing-title" data-i18n="welcome_title">Конструктор Интерактивных Досье</h1>
-    <p class="landing-subtitle" data-i18n="welcome_sub">Создавайте структурированные информационные блоки, связывайте их логическими путями, добавляйте медиафайлы и экспортируйте результаты.</p>
+    <p class="landing-subtitle" data-i18n="welcome_sub">Создавайте структурированные информационные blocks, связывайте их логическими путями, добавляйте медиафайлы и экспортируйте результаты.</p>
     
     <div class="main-actions">
       <div class="action-card" id="go-create-btn">
@@ -629,6 +772,25 @@
     </div>
   </div>
 
+  <!-- КНОПКА AI В ПРАВОМ НИЖНЕМ УГЛУ И ШТОРКА -->
+  <button class="ai-fab-btn" id="ai-toggle-btn" title="AI Assistant">AI</button>
+
+  <div class="ai-sidebar" id="ai-sidebar">
+    <div class="ai-sidebar-header">
+      <h3 data-i18n="ai_assistant_title">AI Ассистент</h3>
+      <span class="close-button" id="close-ai-btn">&times;</span>
+    </div>
+    <div class="ai-chat-history" id="ai-chat-history">
+      <div class="ai-msg assistant" data-i18n="ai_greeting">Привет! Я ваш ИИ-помощник. Чем могу помочь в структурировании досье?</div>
+    </div>
+    <div class="ai-chat-input-area">
+      <textarea class="ai-input" id="ai-message-input" placeholder="Задайте вопрос..." data-i18n-placeholder="ai_input_placeholder"></textarea>
+      <button class="ai-send-btn" id="ai-send-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+      </button>
+    </div>
+  </div>
+
   <script>
     // --- Internationalization Dictionary ---
     const i18n = {
@@ -659,7 +821,11 @@
         modal_title: "Сохраненные таблицы",
         btn_view_item: "Просмотреть",
         btn_download_item: "Скачать",
-        empty_tables: "Нет сохраненных таблиц"
+        empty_tables: "Нет сохраненных таблиц",
+        ai_assistant_title: "AI Ассистент",
+        ai_greeting: "Привет! Я ваш ИИ-помощник. Чем могу помочь в структурировании досье?",
+        ai_input_placeholder: "Задайте вопрос...",
+        ai_mock_response: "Я проанализировал структуру вашего досье. Вы можете связать эти блоки для выстраивания более четкой хронологии."
       },
       en: {
         welcome_title: "Interactive Dossier Builder",
@@ -688,7 +854,11 @@
         modal_title: "Saved Tables",
         btn_view_item: "View",
         btn_download_item: "Download",
-        empty_tables: "No saved tables found"
+        empty_tables: "No saved tables found",
+        ai_assistant_title: "AI Assistant",
+        ai_greeting: "Hello! I am your AI assistant. How can I help you organize your dossier?",
+        ai_input_placeholder: "Ask a question...",
+        ai_mock_response: "I have analyzed your dossier setup. Try linking current components to define a clear chronological layout."
       }
     };
 
@@ -713,6 +883,14 @@
     const tablesModal = document.getElementById('tables-modal');
     const closeModalBtn = document.getElementById('close-modal-btn');
     const modalTablesList = document.getElementById('modal-tables-list');
+
+    // --- AI Variables ---
+    const aiToggleBtn = document.getElementById('ai-toggle-btn');
+    const aiSidebar = document.getElementById('ai-sidebar');
+    const closeAiBtn = document.getElementById('close-ai-btn');
+    const aiSendBtn = document.getElementById('ai-send-btn');
+    const aiMessageInput = document.getElementById('ai-message-input');
+    const aiChatHistory = document.getElementById('ai-chat-history');
     
     let nodes = [];
     let connections = []; 
@@ -736,6 +914,13 @@
           tableNameInput.placeholder = i18n[currentLang][attrKey];
         }
       }
+
+      if (aiMessageInput) {
+        const aiAttrKey = aiMessageInput.getAttribute('data-i18n-placeholder');
+        if (i18n[currentLang][aiAttrKey]) {
+          aiMessageInput.placeholder = i18n[currentLang][aiAttrKey];
+        }
+      }
       
       langToggleBtn.querySelector('span').innerText = currentLang === 'ru' ? 'EN' : 'RU';
       
@@ -748,7 +933,7 @@
         if (linkBtn) linkBtn.innerText = i18n[currentLang].btn_link;
         
         const lbl = node.querySelector('.file-label');
-        if (lbl && lbl.innerText.startsWith('📁') || lbl.innerText.includes('Upload')) {
+        if (lbl && (lbl.innerText.startsWith('📁') || lbl.innerText.includes('Upload'))) {
           lbl.innerText = i18n[currentLang].btn_file;
         }
       });
@@ -774,6 +959,45 @@
         themeToggleBtn.innerHTML = '☀️ <span>' + (currentLang === 'ru' ? 'Светлая' : 'Light') + '</span>';
       }
       drawLines();
+    });
+
+    // --- AI Actions Logic ---
+    aiToggleBtn.addEventListener('click', () => {
+      aiSidebar.classList.toggle('open');
+    });
+
+    closeAiBtn.addEventListener('click', () => {
+      aiSidebar.classList.remove('open');
+    });
+
+    function sendAiMessage() {
+      const text = aiMessageInput.value.trim();
+      if (!text) return;
+
+      // Отрисовка сообщения пользователя
+      const userMsg = document.createElement('div');
+      userMsg.className = 'ai-msg user';
+      userMsg.innerText = text;
+      aiChatHistory.appendChild(userMsg);
+      aiMessageInput.value = '';
+      aiChatHistory.scrollTop = aiChatHistory.scrollHeight;
+
+      // Симуляция ответа ИИ ассистента
+      setTimeout(() => {
+        const assistantMsg = document.createElement('div');
+        assistantMsg.className = 'ai-msg assistant';
+        assistantMsg.innerText = i18n[currentLang].ai_mock_response;
+        aiChatHistory.appendChild(assistantMsg);
+        aiChatHistory.scrollTop = aiChatHistory.scrollHeight;
+      }, 600);
+    }
+
+    aiSendBtn.addEventListener('click', sendAiMessage);
+    aiMessageInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendAiMessage();
+      }
     });
 
     // --- Navigation Flow ---
