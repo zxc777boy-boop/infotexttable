@@ -249,7 +249,7 @@
       font-size: 0.8rem;
       color: var(--text-muted);
       margin-left: auto;
-      margin-right: 180px; /* Leave space for language/theme controls */
+      margin-right: 180px;
     }
 
     /* Workspace canvas styling */
@@ -405,7 +405,7 @@
       color: white;
     }
 
-    /* --- СТИЛИ ДЛЯ МОДАЛЬНОГО ОКНА ПРОСМОТРА ТАБЛИЦ --- */
+    /* Модальное окно */
     .modal {
       display: none; 
       position: fixed;
@@ -474,7 +474,6 @@
     }
     .table-item:hover { background-color: rgba(255,255,255,0.02); }
 
-    /* Блок названия с кнопками редактирования */
     .table-item-name-wrapper {
       display: flex;
       align-items: center;
@@ -641,6 +640,7 @@
       color: var(--text-color);
       align-self: flex-start;
       border-bottom-left-radius: 4px;
+      white-space: pre-wrap;
     }
 
     .ai-chat-input-area {
@@ -684,7 +684,6 @@
       background-color: #9333ea;
     }
 
-    /* Адаптация шторки под маленькие экраны телефонов */
     @media (max-width: 480px) {
       .ai-sidebar {
         width: 100%;
@@ -695,7 +694,7 @@
 </head>
 <body>
 
-  <!-- Global Toolbar for Language & Theme Switching -->
+  <!-- Global Toolbar -->
   <div class="global-controls">
     <button class="ctrl-btn" id="lang-toggle-btn" title="Switch Language">
       🌐 <span>EN</span>
@@ -708,7 +707,7 @@
   <!-- Landing Screen -->
   <div id="landing-screen">
     <h1 class="landing-title" data-i18n="welcome_title">Конструктор Интерактивных Досье</h1>
-    <p class="landing-subtitle" data-i18n="welcome_sub">Создавайте структурированные информационные blocks, связывайте их логическими путями, добавляйте медиафайлы и экспортируйте результаты.</p>
+    <p class="landing-subtitle" data-i18n="welcome_sub">Создавайте структурированные информационные блоки, связывайте их логическими путями, добавляйте медиафайлы и экспортируйте результаты.</p>
     
     <div class="main-actions">
       <div class="action-card" id="go-create-btn">
@@ -740,7 +739,6 @@
         <span data-i18n="btn_export">Экспорт в PDF</span>
       </button>
       
-      <!-- Поле ввода имени таблицы и кнопка сейв -->
       <input type="text" id="table-name-input" class="table-name-input" placeholder="Имя таблицы..." data-i18n-placeholder="placeholder_table_name">
       <button class="btn btn-save" id="save-table-btn">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
@@ -759,20 +757,18 @@
     </div>
   </div>
 
-  <!-- ОКНО ПРОСМОТРА СОХРАНЕННЫХ ТАБЛИЦ -->
+  <!-- Модалка таблиц -->
   <div id="tables-modal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
         <h2 data-i18n="modal_title">Сохраненные таблицы</h2>
         <span class="close-button" id="close-modal-btn">&times;</span>
       </div>
-      <div class="tables-list" id="modal-tables-list">
-        <!-- Сюда динамически загружаются элементы через JS -->
-      </div>
+      <div class="tables-list" id="modal-tables-list"></div>
     </div>
   </div>
 
-  <!-- КНОПКА AI В ПРАВОМ НИЖНЕМ УГЛУ И ШТОРКА -->
+  <!-- AI Ассистент -->
   <button class="ai-fab-btn" id="ai-toggle-btn" title="AI Assistant">AI</button>
 
   <div class="ai-sidebar" id="ai-sidebar">
@@ -792,7 +788,7 @@
   </div>
 
   <script>
-    // --- Internationalization Dictionary ---
+    // --- Словарь перевода ---
     const i18n = {
       ru: {
         welcome_title: "Конструктор Интерактивных Досье",
@@ -864,7 +860,7 @@
 
     let currentLang = 'ru';
 
-    // --- State Variables ---
+    // --- Переменные состояния ---
     const landingScreen = document.getElementById('landing-screen');
     const appContainer = document.getElementById('app-container');
     const container = document.getElementById('workspace-container');
@@ -884,7 +880,7 @@
     const closeModalBtn = document.getElementById('close-modal-btn');
     const modalTablesList = document.getElementById('modal-tables-list');
 
-    // --- AI Variables ---
+    // --- Переменные AI ---
     const aiToggleBtn = document.getElementById('ai-toggle-btn');
     const aiSidebar = document.getElementById('ai-sidebar');
     const closeAiBtn = document.getElementById('close-ai-btn');
@@ -899,7 +895,7 @@
     let isConnectingMode = false;
     let sourceNodeId = null;
 
-    // --- Language Translation Engine ---
+    // --- Языковой движок ---
     function updateLanguageUI() {
       document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
@@ -948,7 +944,7 @@
       updateLanguageUI();
     });
 
-    // --- Theme Toggle Engine ---
+    // --- Переключение темы ---
     themeToggleBtn.addEventListener('click', () => {
       const isLight = document.body.getAttribute('data-theme') === 'light';
       if (isLight) {
@@ -961,7 +957,7 @@
       drawLines();
     });
 
-    // --- AI Actions Logic ---
+    // --- УМНЫЙ AI АССИСТЕНТ (ИНТЕГРАЦИЯ С API) ---
     aiToggleBtn.addEventListener('click', () => {
       aiSidebar.classList.toggle('open');
     });
@@ -970,11 +966,10 @@
       aiSidebar.classList.remove('open');
     });
 
-    function sendAiMessage() {
+    async function sendAiMessage() {
       const text = aiMessageInput.value.trim();
       if (!text) return;
 
-      // Отрисовка сообщения пользователя
       const userMsg = document.createElement('div');
       userMsg.className = 'ai-msg user';
       userMsg.innerText = text;
@@ -982,14 +977,51 @@
       aiMessageInput.value = '';
       aiChatHistory.scrollTop = aiChatHistory.scrollHeight;
 
-      // Симуляция ответа ИИ ассистента
-      setTimeout(() => {
-        const assistantMsg = document.createElement('div');
-        assistantMsg.className = 'ai-msg assistant';
-        assistantMsg.innerText = i18n[currentLang].ai_mock_response;
-        aiChatHistory.appendChild(assistantMsg);
-        aiChatHistory.scrollTop = aiChatHistory.scrollHeight;
-      }, 600);
+      const assistantMsg = document.createElement('div');
+      assistantMsg.className = 'ai-msg assistant';
+      assistantMsg.innerText = currentLang === 'ru' ? 'Думаю...' : 'Thinking...';
+      aiChatHistory.appendChild(assistantMsg);
+      aiChatHistory.scrollTop = aiChatHistory.scrollHeight;
+
+      // Сборка контекста существующих на доске блоков для ИИ[cite: 3]
+      const canvasContext = nodes.map((n, i) => {
+        return `Блок №${i+1} (${n.querySelector('.node-title').innerText}): ${n.querySelector('.node-textarea').value}`;
+      }).join('\n');
+
+      try {
+        const response = await fetch("https://api-inference.huggingface.co/models/Qwen/Qwen2.5-72B-Instruct", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            inputs: `<|im_start|>system\nТы — полезный ИИ-помощник в приложении для создания интерактивных досье и ментальных карт. Отвечай кратко, четко и по делу на языке пользователя. Вот текущее содержимое блоков на холсте для контекста:\n${canvasContext}<|im_end|>\n<|im_start|>user\n${text}<|im_end|>\n<|im_start|>assistant\n`,
+            parameters: { max_new_tokens: 600, temperature: 0.7 }
+          })
+        });
+
+        const data = await response.json();
+        
+        let aiResult = "";
+        if (Array.isArray(data) && data[0]?.generated_text) {
+          const fullText = data[0].generated_text;
+          aiResult = fullText.split("<|im_start|>assistant\n").pop().replace("<|im_end|>", "").trim();
+        } else if (data.error) {
+          aiResult = `Ошибка API: ${data.error}`;
+        } else {
+          aiResult = currentLang === 'ru' ? 'Не удалось получить внятный ответ.' : 'Could not parse response.';
+        }
+
+        assistantMsg.innerText = aiResult;
+
+      } catch (error) {
+        console.error("AI Error:", error);
+        assistantMsg.innerText = currentLang === 'ru' 
+          ? 'Ошибка сети. Проверь подключение или попробуй позже.' 
+          : 'Network error. Please try again later.';
+      }
+
+      aiChatHistory.scrollTop = aiChatHistory.scrollHeight;
     }
 
     aiSendBtn.addEventListener('click', sendAiMessage);
@@ -1000,7 +1032,7 @@
       }
     });
 
-    // --- Navigation Flow ---
+    // --- Навигация ---
     document.getElementById('go-create-btn').addEventListener('click', () => {
       landingScreen.classList.add('hidden');
       appContainer.classList.remove('hidden');
@@ -1031,7 +1063,7 @@
       landingScreen.classList.remove('hidden');
     });
 
-    // --- Dynamic Card Creation ---
+    // --- Логика блоков и связей ---
     addNodeBtn.addEventListener('click', () => {
       const scrollLeft = container.scrollLeft;
       const scrollTop = container.scrollTop;
@@ -1071,7 +1103,6 @@
       workspace.appendChild(nodeEl);
       nodes.push(nodeEl);
 
-      // --- Drag & Drop logic ---
       let isDragging = false;
       let startX, startY;
       const header = nodeEl.querySelector('.node-header');
@@ -1272,7 +1303,6 @@
       generatePdfFromData(currentNodesData);
     });
 
-    // --- REWRITE ИМЕНИ ТАБЛИЦЫ В LOCALSTORAGE ---
     function updateTableNameInStorage(timestamp, newName) {
       const savedTables = getSavedTables();
       const tableIndex = savedTables.findIndex(t => t.timestamp === timestamp);
@@ -1312,7 +1342,6 @@
       return data ? JSON.parse(data) : [];
     }
 
-    // --- РЕНДЕР СПИСКА ТАБЛИЦ С РЕДАКТИРОВАНИЕМ ИМЕНИ ---
     function renderTablesList() {
       modalTablesList.innerHTML = '';
       const tables = getSavedTables();
@@ -1328,7 +1357,6 @@
         const item = document.createElement('div');
         item.className = 'table-item';
 
-        // Обертка для имени, карандаша и инпута
         const nameWrapper = document.createElement('div');
         nameWrapper.className = 'table-item-name-wrapper';
 
@@ -1336,7 +1364,6 @@
         nameSpan.className = 'table-item-name';
         nameSpan.innerText = table.name;
 
-        // Кнопка-карандаш
         const editBtn = document.createElement('button');
         editBtn.className = 'btn-inline-icon';
         editBtn.innerText = '✏️';
@@ -1346,16 +1373,14 @@
         nameWrapper.appendChild(editBtn);
         item.appendChild(nameWrapper);
 
-        // Событие редактирования названия
         editBtn.addEventListener('click', () => {
-          nameWrapper.innerHTML = ''; // очищаем текущие спаны
+          nameWrapper.innerHTML = ''; 
 
           const input = document.createElement('input');
           input.type = 'text';
           input.className = 'edit-name-input';
           input.value = table.name;
 
-          // Квадратная кнопка с галочкой
           const saveNameBtn = document.createElement('button');
           saveNameBtn.className = 'btn-inline-icon btn-edit-confirm';
           saveNameBtn.innerText = '✅';
@@ -1365,11 +1390,10 @@
           nameWrapper.appendChild(saveNameBtn);
           input.focus();
 
-          // Логика подтверждения изменения
           function confirmNameChange() {
             const newName = input.value.trim() || table.name;
             updateTableNameInStorage(table.timestamp, newName);
-            renderTablesList(); // Обновляем список окон
+            renderTablesList(); 
           }
 
           saveNameBtn.addEventListener('click', confirmNameChange);
