@@ -47,7 +47,7 @@
       margin: 0;
       padding: 0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+      transition: background-color 0.3s, color 0.3s, border-color 0.3s, transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s;
     }
 
     body {
@@ -59,7 +59,7 @@
       overflow: hidden;
     }
 
-    /* Top-right Controls (Persistent globally) */
+    /* Top-right Controls */
     .global-controls {
       position: fixed;
       top: 15px;
@@ -86,6 +86,12 @@
 
     .ctrl-btn:hover {
       background-color: var(--node-bg);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px var(--card-shadow);
+    }
+
+    .ctrl-btn:active {
+      transform: translateY(0);
     }
 
     /* Landing Screen */
@@ -140,13 +146,16 @@
       width: 260px;
       cursor: pointer;
       box-shadow: 0 10px 15px -3px var(--card-shadow);
-      transition: transform 0.2s, box-shadow 0.2s;
     }
 
     .action-card:hover {
-      transform: translateY(-5px);
+      transform: translateY(-6px) scale(1.02);
       box-shadow: 0 20px 25px -5px var(--card-shadow);
       border-color: var(--accent-color);
+    }
+
+    .action-card:active {
+      transform: translateY(-2px) scale(1.0);
     }
 
     .action-icon {
@@ -206,10 +215,17 @@
       display: flex;
       align-items: center;
       gap: 6px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
     .btn:hover {
       background-color: var(--accent-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
+    .btn:active {
+      transform: translateY(0);
     }
 
     .btn-pdf {
@@ -220,7 +236,6 @@
       background-color: var(--pdf-hover);
     }
 
-    /* Стиль зеленой кнопки сохранения */
     .btn-save {
       background-color: #16a34a;
     }
@@ -229,7 +244,6 @@
       background-color: #15803d;
     }
 
-    /* Стиль поля ввода имени таблицы */
     .table-name-input {
       background-color: var(--input-bg);
       border: 1px solid var(--border-color);
@@ -322,10 +336,12 @@
       cursor: pointer;
       font-size: 1rem;
       line-height: 1;
+      transition: color 0.2s, transform 0.2s;
     }
 
     .delete-btn:hover {
       color: var(--danger-color);
+      transform: scale(1.2);
     }
 
     .node-textarea {
@@ -364,6 +380,13 @@
       border-radius: 6px;
       font-size: 0.75rem;
       cursor: pointer;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .file-label:hover {
+      background-color: var(--accent-color);
+      color: white;
+      transform: translateY(-1px);
     }
 
     .file-preview {
@@ -403,6 +426,7 @@
       background-color: var(--accent-color);
       border-color: var(--accent-color);
       color: white;
+      transform: translateY(-1px);
     }
 
     /* Модальное окно */
@@ -451,8 +475,12 @@
       font-size: 28px;
       color: var(--text-muted);
       line-height: 1;
+      transition: color 0.2s, transform 0.2s;
     }
-    .close-button:hover { color: var(--danger-color); }
+    .close-button:hover { 
+      color: var(--danger-color); 
+      transform: scale(1.1);
+    }
 
     .tables-list {
       max-height: 350px;
@@ -511,6 +539,9 @@
       align-items: center;
       justify-content: center;
     }
+    .btn-inline-icon:hover {
+      transform: scale(1.2);
+    }
     
     .btn-edit-confirm {
       background-color: var(--input-bg);
@@ -535,11 +566,23 @@
       font-weight: 600;
       cursor: pointer;
       color: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
     }
     .btn-modal-view { background-color: var(--accent-color); }
-    .btn-modal-view:hover { background-color: var(--accent-hover); }
+    .btn-modal-view:hover { 
+      background-color: var(--accent-hover); 
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    .btn-modal-view:active { transform: translateY(0); }
+
     .btn-modal-download { background-color: var(--pdf-color); }
-    .btn-modal-download:hover { background-color: var(--pdf-hover); }
+    .btn-modal-download:hover { 
+      background-color: var(--pdf-hover); 
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    .btn-modal-download:active { transform: translateY(0); }
     
     .empty-message {
       text-align: center;
@@ -548,7 +591,7 @@
       font-size: 0.9rem;
     }
 
-    /* --- КНОПКА И ПАНЕЛЬ AI АССИСТЕНТА --- */
+    /* --- AI АССИСТЕНТА --- */
     .ai-fab-btn {
       position: fixed;
       bottom: 25px;
@@ -568,12 +611,20 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: transform 0.2s, box-shadow 0.2s;
+      display: none; 
+    }
+
+    .ai-fab-btn.visible {
+      display: flex; 
     }
 
     .ai-fab-btn:hover {
-      transform: scale(1.05);
+      transform: translateY(-4px) scale(1.05);
       box-shadow: 0 6px 20px rgba(168, 85, 247, 0.6);
+    }
+
+    .ai-fab-btn:active {
+      transform: translateY(0) scale(1.0);
     }
 
     .ai-sidebar {
@@ -678,11 +729,15 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
     .ai-send-btn:hover {
       background-color: #9333ea;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     }
+    .ai-send-btn:active { transform: translateY(0); }
 
     @media (max-width: 480px) {
       .ai-sidebar {
@@ -713,7 +768,7 @@
       <div class="action-card" id="go-create-btn">
         <div class="action-icon">➕</div>
         <div class="action-title" data-i18n="action_create_title">Создать досье</div>
-        <div class="action-desc" data-i18n="action_create_desc">Открыть рабочую область и начать конструировать новые блоки.</div>
+        <div class="action-desc" data-i18n="action_create_desc">Открыть рабочую область и начать конструировать новые blocks.</div>
       </div>
       <div class="action-card" id="go-view-btn">
         <div class="action-icon">📋</div>
@@ -788,6 +843,9 @@
   </div>
 
   <script>
+    // --- НАСТРОЙКА GEMINI API КЛЮЧА ---
+    const GEMINI_API_KEY = "AQ.Ab8RN6LqzzCIQK6PTPNWalQpmAl_qdREtvljGiYgansguELMPQ"; 
+
     // --- Словарь перевода ---
     const i18n = {
       ru: {
@@ -821,7 +879,6 @@
         ai_assistant_title: "AI Ассистент",
         ai_greeting: "Привет! Я ваш ИИ-помощник. Чем могу помочь в структурировании досье?",
         ai_input_placeholder: "Задайте вопрос...",
-        ai_mock_response: "Я проанализировал структуру вашего досье. Вы можете связать эти блоки для выстраивания более четкой хронологии."
       },
       en: {
         welcome_title: "Interactive Dossier Builder",
@@ -854,7 +911,6 @@
         ai_assistant_title: "AI Assistant",
         ai_greeting: "Hello! I am your AI assistant. How can I help you organize your dossier?",
         ai_input_placeholder: "Ask a question...",
-        ai_mock_response: "I have analyzed your dossier setup. Try linking current components to define a clear chronological layout."
       }
     };
 
@@ -957,7 +1013,7 @@
       drawLines();
     });
 
-    // --- УМНЫЙ AI АССИСТЕНТ (ИНТЕГРАЦИЯ С API) ---
+    // --- ИНТЕГРАЦИЯ С GEMINI API ---
     aiToggleBtn.addEventListener('click', () => {
       aiSidebar.classList.toggle('open');
     });
@@ -969,6 +1025,13 @@
     async function sendAiMessage() {
       const text = aiMessageInput.value.trim();
       if (!text) return;
+
+      if (GEMINI_API_KEY === "ТВОЙ_GEMINI_API_КЛЮЧ") {
+        alert(currentLang === 'ru' 
+          ? 'Пожалуйста, вставьте ваш рабочий Gemini API ключ в начале скрипта (переменная GEMINI_API_KEY)!' 
+          : 'Please insert your working Gemini API key at the top of the script (GEMINI_API_KEY variable)!');
+        return;
+      }
 
       const userMsg = document.createElement('div');
       userMsg.className = 'ai-msg user';
@@ -983,31 +1046,33 @@
       aiChatHistory.appendChild(assistantMsg);
       aiChatHistory.scrollTop = aiChatHistory.scrollHeight;
 
-      // Сборка контекста существующих на доске блоков для ИИ[cite: 3]
+      // Сканируем холст для отправки текущего контекста блоков
       const canvasContext = nodes.map((n, i) => {
         return `Блок №${i+1} (${n.querySelector('.node-title').innerText}): ${n.querySelector('.node-textarea').value}`;
       }).join('\n');
 
+      const systemInstruction = `Ты — умный и полезный ИИ-помощник в приложении для создания интерактивных досье и ментальных карт. Отвечай кратко, четко и конкретно на запрос пользователя. Вот текущее содержимое блоков на холсте для контекста:\n${canvasContext}`;
+
       try {
-        const response = await fetch("https://api-inference.huggingface.co/models/Qwen/Qwen2.5-72B-Instruct", {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            inputs: `<|im_start|>system\nТы — полезный ИИ-помощник в приложении для создания интерактивных досье и ментальных карт. Отвечай кратко, четко и по делу на языке пользователя. Вот текущее содержимое блоков на холсте для контекста:\n${canvasContext}<|im_end|>\n<|im_start|>user\n${text}<|im_end|>\n<|im_start|>assistant\n`,
-            parameters: { max_new_tokens: 600, temperature: 0.7 }
+            contents: [{ parts: [{ text: text }] }],
+            systemInstruction: { parts: [{ text: systemInstruction }] },
+            generationConfig: { maxOutputTokens: 800, temperature: 0.7 }
           })
         });
 
         const data = await response.json();
         
         let aiResult = "";
-        if (Array.isArray(data) && data[0]?.generated_text) {
-          const fullText = data[0].generated_text;
-          aiResult = fullText.split("<|im_start|>assistant\n").pop().replace("<|im_end|>", "").trim();
+        if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+          aiResult = data.candidates[0].content.parts[0].text.trim();
         } else if (data.error) {
-          aiResult = `Ошибка API: ${data.error}`;
+          aiResult = `Ошибка Gemini API: ${data.error.message}`;
         } else {
           aiResult = currentLang === 'ru' ? 'Не удалось получить внятный ответ.' : 'Could not parse response.';
         }
@@ -1017,8 +1082,8 @@
       } catch (error) {
         console.error("AI Error:", error);
         assistantMsg.innerText = currentLang === 'ru' 
-          ? 'Ошибка сети. Проверь подключение или попробуй позже.' 
-          : 'Network error. Please try again later.';
+          ? 'Ошибка сети. Проверь API-ключ или подключение к интернету.' 
+          : 'Network error. Please check your API key or connection.';
       }
 
       aiChatHistory.scrollTop = aiChatHistory.scrollHeight;
@@ -1036,6 +1101,7 @@
     document.getElementById('go-create-btn').addEventListener('click', () => {
       landingScreen.classList.add('hidden');
       appContainer.classList.remove('hidden');
+      aiToggleBtn.classList.add('visible'); 
       if (nodes.length === 0) {
         createNode(150, 150);
         createNode(450, 200);
@@ -1061,6 +1127,8 @@
     backToMenuBtn.addEventListener('click', () => {
       appContainer.classList.add('hidden');
       landingScreen.classList.remove('hidden');
+      aiToggleBtn.classList.remove('visible'); 
+      aiSidebar.classList.remove('open');
     });
 
     // --- Логика блоков и связей ---
@@ -1413,6 +1481,7 @@
           tablesModal.style.display = "none";
           landingScreen.classList.add('hidden');
           appContainer.classList.remove('hidden');
+          aiToggleBtn.classList.add('visible'); 
         });
 
         const downloadBtn = document.createElement('button');
